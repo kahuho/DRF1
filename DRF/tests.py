@@ -5,7 +5,7 @@ from music.models import Songs
 from music.serializers import SongsSerializer
 from django.test import TestCase
 from  django.contrib.auth.models import User
-
+import json
 
 # tests for views
 
@@ -40,6 +40,25 @@ class BaseViewTest(APITestCase):
         self.create_song("simple song", "konshens")
         self.create_song("love is wicked", "brick and lace")
         self.create_song("jam rock", "damien marley")
+    def login_client(self, username="", password=""):
+            # get a token from DRF
+            response = self.client.post(
+                reverse('create-token'),
+                data=json.dumps(
+                    {
+                        'username': username,
+                        'password': password
+                    }
+                ),
+                content_type='application/json'
+            )
+            self.token = response.data['token']
+            # set the token in the header
+            self.client.credentials(
+                HTTP_AUTHORIZATION='Bearer ' + self.token
+            )
+            self.client.login(username=username, password=password)
+            return self.token
 
 
 
@@ -68,6 +87,8 @@ class GetAllSongsTest(BaseViewTest):
         This test ensures that all songs added in the setUp method
         exist when we make a GET request to the songs/ endpoint
         """
+        # this is the update you need to add to the test, login
+        self.login_client('test_user', 'testing')
         # hit the API endpoint
         response = self.client.get(
             reverse("songs-all", kwargs={"version": "v1"})

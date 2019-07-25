@@ -30,6 +30,7 @@ class LoginView(generics.CreateAPIView):
     permission_classes = (permissions.AllowAny,)
 
     queryset = User.objects.all()
+    serializer_class = TokenSerializer
 
     def post(self, request, *args, **kwargs):
         username = request.data.get("username", "")
@@ -48,10 +49,35 @@ class LoginView(generics.CreateAPIView):
             return Response(serializer.data)
         return Response(status=status.HTTP_401_UNAUTHORIZED)
 
+class RegisterUsers(generics.CreateAPIView):
+    """
+    POST auth/register/
+    """
+    permission_classes = (permissions.AllowAny,)
+    serializer_class = TokenSerializer
 
+
+    def post(self, request, *args, **kwargs):
+        username = request.data.get("username", "")
+        password = request.data.get("password", "")
+        email = request.data.get("email", "")
+        if not username and not password and not email:
+            return Response(
+                data={
+                    "message": "username, password and email is required to register a user"
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        new_user = User.objects.create_user(
+            username=username, password=password, email=email
+        )
+        return Response(status=status.HTTP_201_CREATED)
 class ListSongsView(generics.ListAPIView):
     """
     Provides a get method handler.
     """
     queryset = Songs.objects.all()
     serializer_class = SongsSerializer
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
